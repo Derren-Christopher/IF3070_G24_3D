@@ -41,9 +41,9 @@ class Move:
     desc: str = "" #keterangan text ajah
 
 class State:
-    def __init__(self, problem, placements):
+    def __init__(self, problem, placements): #dia ngejalanin ini setiap State dibuat, placements itu posisi semua kendaraan (termasuk yg diluar kapal)
         self.problem = problem
-        self.placements = placements
+        self.placements = placements 
         self.occ = {}
         self.weight = 0
         self.fee = 0
