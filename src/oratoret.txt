@@ -1,0 +1,38 @@
+Okeh, kita baca ulang speknya and kita tulisin yang penting yes
+
+Variabel Permasalahan:
+Jadi intinya kita harus kaya naro pemetaan optimal buat kendaraan di geladak kapal kargo (intinya nyusun-nyusun kendaraan biar total ShippingFee maksimal di geladak kapal)
+Setiap geladak and kapal -> representasi grid 2D bentuk persegi/persegi panjang
+Solusinya memilih kendaraan mana yang diangkut dan menentukan posisi serta orientasi peletakkannya dalem geladak tp ya tetep muat gitu
+
+Vehicle (Kendaraan)
+id = 'Owen' misal as identifier
+Dimensions = {w:3, l:4}, ini ukuran kendaraannya width sama length
+Orientation = Horizontal/Vertical, ditaronya menyamping atau kebawah
+ShippingFee = 60 misal, tarif/keuntungan pengiriman kendaraan (dalam juta rupiah)
+Weight = 5 misal, itu berat kendaraan
+ETA = 3, itu Estimated Time Arrival buat perkiraan waktu kedatangan (dalam hari)
+
+Ship (Kapal)
+Dimensions = {w:10, l:20}, ukuran si geladak kapal basically sistemnya sama kek ukuran kendaraan (grid/matrix gitu)
+MaxCapacity = 500 max angkut berat
+
+*kayanya nanti itu kita suru input dulu ajah angkanya manual nanti algoritmanya yang ngitungin based on data yang kita kasih
+
+Ga semua kendaraan harus diangkut (yang memenuhi spek and optimal ajah)
+Koordinat harus bil bulat, representasi bebas
+Struktur data bebas, misal key-value JSON
+initial state random
+move yang diperbolehkan tiap iterasi:
+1. Tuker 2 kendaraan (dalam/luar truk)
+2. Mindahin kendaraan ke koordinat berbeda
+3. Ngubah orientasi kendaraan
+final state -> pemetaan kendaraan dalam kapal, yang harus divisualisasi:
+1. Bagaimana state kendaraan dalem atau luar kapal
+2. Keadaan geladak
+3. Value pada state tersebut
+
+Obj function: max ShippingFee
+Kendaraan gabole numpuk
+Kendaraan gabole melebihi batas geladak
+Kapal gabole overcapacity
