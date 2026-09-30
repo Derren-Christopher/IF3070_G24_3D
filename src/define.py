@@ -46,4 +46,4 @@ class State:
         self.placements = placements
         self.occ = {}
         self.weight = 0
-        self.weight = 0
+        self.fee = 0
