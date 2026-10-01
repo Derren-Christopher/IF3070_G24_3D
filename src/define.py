@@ -53,7 +53,7 @@ class State:
                 v = problem.vehicles[vid]
                 self.weight += v.weight
                 self.fee += v.fee
-                for c in problem.cells(vid, p):
+                for c in problem.cells(v, p):
                     self.occ[c] = vid #jadi misalnya ada kendaraan A di cell (1,1) maka occ[(1,1)] = A, jadi bisa ngecek cell mana aja yang udah ditempati kendaraan mana
 
     @property
@@ -86,7 +86,7 @@ class State:
 class Problem:
     def __init__(self, ship: Ship, vehicles: List[Vehicle]):
         self.ship = ship
-        self.vehicles = Dict[str, Vehicle] = {v.id: v for v in vehicles} #jadi misalnya ada kendaraan A sama B, self.vehicles = {"A": VehicleA, "B": VehicleB}], biar gampang cari kendaraannya dari idnya
+        self.vehicles = {v.id: v for v in vehicles} #jadi misalnya ada kendaraan A sama B, self.vehicles = {"A": VehicleA, "B": VehicleB}], biar gampang cari kendaraannya dari idnya
         self.ids = [v.id for v in vehicles] #daftar id kendaraan
 
     @staticmethod
@@ -114,9 +114,9 @@ class Problem:
                 dx, dy = self.dims(v, p.orientation) #ngecek dimensi kendaraan based on kek orientationnya
                 if p.x < 0 or p.y < 0 or p.x + dx > ship.w or p.y + dy > ship.l: #ngecek klo misalnya kendaraan itu keluar dari kapal or not
                     return None
-                for c in self.cells(v,p):
+                for c in self.cells(v, p):
                     owner = state.occ.get(c) #ngecek cell itu udah ditempati kendaraan lain or not
-                    if owner is not None and owner not in changes:
+                    if owner is not None and owner not in change:
                         return None #overlap
                     if c in new_cells:
                         return None #overlap sama yang baru berubah
@@ -125,6 +125,9 @@ class Problem:
             return None
         return fee #klo valid, return total fee baru
 
+    def evaluate(self, state: State, change: Dict[str, Placement]) -> Optional[int]:
+        return self.is_valid(state, change)
+
 #Ini buat cuman cek diakhir doang ada logic yang dilanggar apa ngga, kaya cek 1-1 kendaraan lambat sih tp kaya dipastiin benernya aja makanya keluarannya either True/False kan
 
     def feasible_neighbors(self, state: State) -> Iterator[Tuple[Move, int]]: # enum semua neighbor yang feasible + nilainya
@@ -132,7 +135,7 @@ class Problem:
         ids = self.ids
 
         #1. Swap
-        for i in range (len(ids)):
+        for i in range(len(ids)):
             a = ids[i]
             pa = P[a]
             for j in range(i + 1, len(ids)):
@@ -144,4 +147,87 @@ class Problem:
                     a: Placement(pb.x, pb.y, pa.orientation),
                     b: Placement(pa.x, pa.y, pb.orientation),
                 }
+                val = self.evaluate(state, ch)
+                if val is not None:
+                    yield Move("Swap", ch, f"Swap {a} and {b}"), val #dituker tp orientasinya tetep orientasi awal atas asumsi ada gerakan lain buat ubah orientasinya yes
+
+        for vid in ids:
+            v = self.vehicles[vid]
+            p = P[vid]
+
+            #2. Move
+            dx, dy = self.dims(v, p.orientation)
+            for x in range(self.ship.w - dx + 1):
+                for y in range(self.ship.l - dy + 1):
+                    if p.placed and (x, y) == (p.x, p.y):
+                        continue #klo kendaraannya udah di posisi itu ngapain dipindahin juga
+                    ch = {vid: Placement(x, y, p.orientation)}
+                    val = self.evaluate(state, ch)
+                    if val is not None:
+                        yield Move("Move", ch, f"Move {vid} to ({x},{y})"), val
+            if p.placed:
+                ch = {vid: Placement(None, None, p.orientation)}
+                val = self.evaluate(state, ch)
+                if val is not None:
+                    yield Move("Move", ch, f"Move {vid} out"), val
+
+            #3. Rotate
+            if v.w != v.l: #klo width sama lengthnya sama ngapain dirotasi juga
+                new_o = VERTICAL if p.orientation == HORIZONTAL else HORIZONTAL
+                ch = {vid: Placement(p.x, p.y, new_o)}
+                val = self.evaluate(state, ch)
+                if val is not None:
+                    yield Move("Rotate", ch, f"Rotate {vid} --> {new_o}"), val
+
+    def random_state(self, rng: random.Random, attempts: int = 30) -> State:
+        order = self.ids[:]
+        rng.shuffle(order) #acak urutan kendaraan
+        placements = {vid: Placement() for vid in self.ids} #bikin placements kosong dulu
+        occ = set()
+        weight = 0
+        for vid in order:
+            v = self.vehicles[vid]
+            if weight + v.weight > self.ship.max_capacity:
+                continue #klo misalnya total weight melebihi kapasitas kapal ngapain ditempatin juga
+            placed = False
+            for _ in range(attempts):
+                o = rng.choice([HORIZONTAL, VERTICAL]) #acak" orientasi kendaraan
+                dx, dy = self.dims(v, o)
+                if dx > self.ship.w or dy > self.ship.l:
+                    continue #klo misalnya dimensi kendaraan melebihi dimensi kapal ngapain ditempatin juga
+                x = rng.randint(0, self.ship.w - dx) #acak posisi x kendaraan
+                y = rng.randint(0, self.ship.l - dy) #acak posisi y kendaraan
+                p = Placement(x, y, o)
+                cs = list(self.cells(v, p))
+                if any(c in occ for c in cs):
+                    continue #klo misalnya cell kendaraan itu udah ditempati kendaraan lain ngapain ditempatin juga disitu
+                occ.update(cs) #tambahin cell kendaraan itu ke occupancy
+                weight += v.weight #tambahin total weight sama fee
+                placements[vid] = p #tambahin kendaraan itu ke placements
+                placed = True
+                break
+            if not placed:
+                placements[vid] = Placement()
+        return State(self, placements) #bikin state baru pake placements baru 
+
+def generate_problem(n_vehicles: int = 25, ship_w = 10, ship_l: int = 20, capacity_ratio: float = 0.6, seed: int = 0) -> Problem:
+    rng = random.Random(seed)
+    vehicles = []
+    for i in range(n_vehicles):
+        w, l = rng.randint(1, 4), rng.randint(2, 6) #acak dimensi kendaraan
+        fee = max(5, int(w * l * rng.uniform(3, 8)))
+        weight = rng.randint(3, 25)
+        vehicles.append(Vehicle(f"V{i + 1:02d}", w, l, fee, weight, rng.randint(0, 5))) #bikin kendaraan baru
+    total_w = sum(v.weight for v in vehicles)
+    return Problem(Ship(ship_w, ship_l, int(total_w * capacity_ratio)), vehicles) #bikin problem baru dengan kapal dan kendaraan yang udah dibuat
+
+def load_problem(path:str) -> Problem:
+    with open(path, encoding="utf-8") as f:
+        d = json.load(f)
+    s = d["Ship"]
+    ship = Ship(s["w"], s["l"], s["max_capacity"])
+    vs = [Vehicle(str(v["id"]), v["w"], v["l"], v["fee"], v["weight"], v.get("eta", 0)) for v in d["Vehicles"]]
+    return Problem(ship, vs) #bikin problem baru dengan kapal dan kendaraan yang udah dibuat
+
+
     
