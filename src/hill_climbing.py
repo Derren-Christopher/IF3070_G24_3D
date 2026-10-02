@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 import random
+import sys
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import List
 
-from core import Problem, State
+SRC_DIR = Path(__file__).resolve().parent
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+
+from define import Problem, State
 
 @dataclass
 class HillClimbingResult:
@@ -88,4 +94,13 @@ def _climb(problem: Problem, initial: State, rng: random.Random, name: str, max_
         history.append(state.value)
 
     return HillClimbingResult(
-        
+        algorithm = name, seed = seed, initial_state = initial, final_state = state,
+        history = history, iterations = len(history)-1, sideways_moves = sideways_total, neighbors_evaluated = evaluated, duration = time.perf_counter() - t0, stop_reason = stop_reason, max_sideways = max_sideways,
+    )
+
+def steepest_ascent(problem: Problem, initial: State, seed: int = 0, max_iters: int = 10000) -> HillClimbingResult:
+    return _climb(problem, initial, random.Random(seed), "steepest_ascent", max_sideways=0, max_iters=max_iters, seed=seed)
+
+def sideways_move(problem: Problem, initial: State, seed: int = 0, max_sideways: int = 100, max_iters: int = 10000) -> HillClimbingResult:
+    return _climb(problem, initial, random.Random(seed), f"sideways_move (max = {max_sideways})", max_sideways=max_sideways, max_iters=max_iters, seed=seed)
+

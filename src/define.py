@@ -210,7 +210,7 @@ class Problem:
                 placements[vid] = Placement()
         return State(self, placements) #bikin state baru pake placements baru 
 
-def generate_problem(n_vehicles: int = 25, ship_w = 10, ship_l: int = 20, capacity_ratio: float = 0.6, seed: int = 0) -> Problem:
+def generate_problem(n_vehicles: int = 25, ship_w = 10, ship_l: int = 20, capacity_ratio: Optional[float] = None, seed: int = 0, max_capacity: Optional[int] = None) -> Problem:
     rng = random.Random(seed)
     vehicles = []
     for i in range(n_vehicles):
@@ -219,7 +219,13 @@ def generate_problem(n_vehicles: int = 25, ship_w = 10, ship_l: int = 20, capaci
         weight = rng.randint(3, 25)
         vehicles.append(Vehicle(f"V{i + 1:02d}", w, l, fee, weight, rng.randint(0, 5))) #bikin kendaraan baru
     total_w = sum(v.weight for v in vehicles)
-    return Problem(Ship(ship_w, ship_l, int(total_w * capacity_ratio)), vehicles) #bikin problem baru dengan kapal dan kendaraan yang udah dibuat
+    if max_capacity is not None:
+        ship_capacity = max_capacity
+    elif capacity_ratio is not None:
+        ship_capacity = int(total_w * capacity_ratio)
+    else:
+        ship_capacity = int(total_w * 0.6)
+    return Problem(Ship(ship_w, ship_l, ship_capacity), vehicles) #bikin problem baru dengan kapal dan kendaraan yang udah dibuat
 
 def load_problem(path:str) -> Problem:
     with open(path, encoding="utf-8") as f:
