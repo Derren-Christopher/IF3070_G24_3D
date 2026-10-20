@@ -83,7 +83,7 @@ def _climb(problem: Problem, initial: State, rng: random.Random, name: str, max_
             sideways_streak = 0
         elif best_val is not None and best_val == cur: #nah ini sideways move
             if sideways_streak >= max_sideways:
-                stop_reason = ("locak optimum" if max_sideways == 0 else "max_sideways_reached")
+                stop_reason = ("local optimum" if max_sideways == 0 else "max_sideways_reached")
                 break
             state = state.apply(best_move)
             sideways_streak += 1
