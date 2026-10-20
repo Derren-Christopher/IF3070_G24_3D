@@ -3,6 +3,7 @@ from __future__ import annotations
 import random
 
 from define import HORIZONTAL, VERTICAL, Placement, Problem, Ship, State, Vehicle, generate_problem
+from simulated_annealing import simulated_annealing, show_graphics
 
 
 def ask_int(prompt: str, minimum: int = 0) -> int:
@@ -15,6 +16,15 @@ def ask_int(prompt: str, minimum: int = 0) -> int:
         except ValueError:
             print("Input harus angka bulat.")
 
+def ask_float (prompt: str, default: float) -> float:
+    while True:
+        raw = input(prompt).strip()
+        if raw == "":
+            return default
+        try:
+            return float(raw)
+        except ValueError:
+            print ("Input harus angka (boleh desimal).")
 
 def ask_choice(prompt: str, options: list[str]) -> str:
     while True:
@@ -191,6 +201,27 @@ def print_step_report(problem: Problem, initial_state: State, algorithm: str, ma
     print(f"stop_reason: {stop_reason}")
     print(f"neighbors_evaluated: {evaluated}")
 
+def print_annealing_report(problem: Problem, seed: int, mode: str, show_matrix: bool, n_runs: int = 3) -> None:
+    init_temp= ask_float("Suhu awal(default 50): ", 50.0)
+    cooling_rate= ask_float ("Cooling rate(default 0.999): ", 0.999)
+    stopping_temp= ask_float("Suhu berhenti(default 0.01): ", 0.01)
+
+    for run in range(n_runs):
+        initial_state= random_state(problem, seed+run)
+        rng= random.Random(seed+run)
+        final, best_hist, current_hist, exp_hist, stuck, iters, duration= simulated_annealing(problem, initial_state, init_temp, cooling_rate, stopping_temp, rng)
+
+        print(f"\n SIMULATED ANNEALING - PERCOBAAN KE-{run + 1}")
+        print("Value awal: ", initial_state.value)
+        print("Value akhir: ", final.value)
+        print("Iterasi: ", iters)
+        print("Durasi: ", round(duration,2), "detik")
+        print("Stuck: ", stuck)
+        print_final_vehicle_positions(final)
+        if show_matrix:
+            print_ship_matrix(initial_state, "Matriks state awal")
+            print_ship_matrix(final, "Matriks state akhir")
+        if mode !="quick" and ask_yes_no("Tampilkan grafik? (y/n:) "): show_graphics(best_hist, current_hist, exp_hist, f"(percobaan{run + 1})")
 
 def main() -> None:
     print("=== Program Main Hill Climbing ===")
@@ -211,8 +242,10 @@ def main() -> None:
     print("   -> Ambil move terbaik yang lebih baik dari state sekarang")
     print("2. Sideways Move")
     print("   -> Boleh ambil move yang sama bagusnya, lalu lanjut sampai batas sideways")
-    choice = ask_choice("Pilih algoritma [1/2]: ", ["1", "2"])
-    algorithm = "steepest" if choice == "1" else "sideways"
+    print("3. Simulated Annealing")
+    print("   -> Neighbor random, move jelek bisa diterima sesuai dengan peluang e^(delta E/T)")
+    choice = ask_choice("Pilih algoritma [1/2/3]: ", ["1", "2", "3"])
+    algorithm = "steepest" if choice == "1" else "sideways" if choice == "2" else "annealing"
 
     n_vehicles = ask_int("Jumlah kendaraan: ", 1)
     ship_w = ask_int("Lebar kapal: ", 1)
@@ -254,7 +287,11 @@ def main() -> None:
         print("Ukuran kendaraan, fee, dan berat diinput manual oleh user.")
 
     print_vehicle_list(problem)
-
+    
+    if algorithm == "annealing":
+        print_annealing_report(problem, seed, mode, show_matrix)
+        return
+    
     initial_state = random_state(problem, seed)
     print("State awal dibuat secara random.")
 
