@@ -103,7 +103,7 @@ def is_local_optimum(problem: Problem, state: State) -> bool:
 
     return True
 
-def simulated_annealing(problem: Problem, initial: State, seed: int = 0, init_temp: float = 50.0, cooling_rate: float = 0.999, stopping_temp: float = 0.01, stuck_window: int = 50) -> AnnealingResult:
+def simulated_annealing(problem: Problem, initial: State, seed: int = 0, init_temp: float = 50.0, cooling_rate: float = 0.999, stopping_temp: float = 0.01, stuck_window: int = 50, trace: list | None = None) -> AnnealingResult:
 
     if not (0 < cooling_rate < 1):
         raise ValueError("cooling_rate harus di antara 0 dan 1")
@@ -115,6 +115,10 @@ def simulated_annealing(problem: Problem, initial: State, seed: int = 0, init_te
     rng = random.Random(seed)
     current = initial
     best = initial
+
+    if trace is not None:
+        trace.append((0,best))
+
     T = init_temp
 
     iteration = 0
@@ -122,7 +126,7 @@ def simulated_annealing(problem: Problem, initial: State, seed: int = 0, init_te
 
     stuck_count = 0
     stuck_iters = []
-    stuck_checked = False #sudah dicek local optimum untuk episode stagnan ini?
+    stuck_checked = False #sudah dicek local optimum untuk part stagnan?
 
     best_hist = [] #mencatat value terbaik di setiap iterasi
     current_hist = [] #mencatat nilai state di setiap iterasi
@@ -159,6 +163,8 @@ def simulated_annealing(problem: Problem, initial: State, seed: int = 0, init_te
 
                 if current.value > best.value:
                     best = current
+                    if trace is not None:                      
+                        trace.append((iteration, best)) 
 
         #cek stagnan
         if current.value != value_before:
