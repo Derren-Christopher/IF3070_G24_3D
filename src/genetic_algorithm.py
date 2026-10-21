@@ -10,11 +10,8 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 from define import HORIZONTAL, VERTICAL, Move, Placement, Problem, State
 
-
 # peluang tiap jenis mutasi (total = 1.0)
 MUTATION_WEIGHTS = {"Swap": 0.27, "Move": 0.53, "Rotate": 0.20}
-
-
 
 
 @dataclass
@@ -30,21 +27,17 @@ class GeneticResult:
     duration: float
     params: dict #parameter yang dipake utk dicatat
 
-
     @property
     def initial_value(self) -> int:
         return self.initial_state.value #nilai state awal
-
 
     @property
     def final_value(self) -> int:
         return self.final_state.value #nilai state akhir
 
-
     @property
     def iterations(self) -> int:
         return self.generations #menyamakan dengan algoritma lain biar bisa dibandingin
-
 
     def summary(self) -> dict: #biar disimpen sebagai json
         return {
@@ -64,14 +57,10 @@ class GeneticResult:
         }
 
 
-
-
 def random_selection(population: List[State], rng: random.Random, k: int) -> State:
     #ambil k individu acak, yang nilainya paling gede jadi induk
     contestants = rng.sample(population, min(k, len(population))) #ambil k acak, jangan lebih dari isi populasi
     return max(contestants, key=lambda s: s.value) #yang value-nya paling tinggi menang
-
-
 
 
 def crossover(problem: Problem, a: State, b: State, rng: random.Random) -> State:
@@ -85,7 +74,6 @@ def crossover(problem: Problem, a: State, b: State, rng: random.Random) -> State
     batas = ship.w if sumbu == 0 else ship.l #panjang sumbu yang dipotong
     garis = rng.randint(1, batas - 1) #posisi garis potong
     kiri, kanan = (a, b) if rng.random() < 0.5 else (b, a) #acak induk mana yang dapet sisi kiri
-
 
     candidates = []  # kendaraan yang mau diwariskan ke anak
     for vehicle_id in problem.ids:
@@ -102,15 +90,12 @@ def crossover(problem: Problem, a: State, b: State, rng: random.Random) -> State
             if start_position >= garis:  # kendaraan utuh di sisi kanan garis
                 candidates.append((vehicle_id, right_position))
 
-
     rng.shuffle(candidates)  # acak urutan kandidat
     candidates.sort(key=lambda c: problem.vehicles[c[0]].fee, reverse=True)  # fee terbesar dicoba duluan
-
 
     placements = {}  # placement anak, vehicle_id -> Placement
     occupied_cells = set()  # geladak yang sudah dipakai anak
     total_weight = 0  # total berat kendaraan di anak
-
 
     def add_vehicle(vehicle_id, placement):
         # Coba menaruh kendaraan di posisi placement.
@@ -132,10 +117,8 @@ def crossover(problem: Problem, a: State, b: State, rng: random.Random) -> State
         placements[vehicle_id] = placement
         return True
 
-
     for vehicle_id, placement in candidates:
         add_vehicle(vehicle_id, placement)
-
 
     remaining = [vid for vid in problem.ids if vid not in placements]
     rng.shuffle(remaining)
@@ -146,7 +129,6 @@ def crossover(problem: Problem, a: State, b: State, rng: random.Random) -> State
             if placement.placed and add_vehicle(vehicle_id, placement):
                 break
 
-
     result_placements = {}
     for vehicle_id in problem.ids:
         if vehicle_id in placements:
@@ -155,8 +137,6 @@ def crossover(problem: Problem, a: State, b: State, rng: random.Random) -> State
             result_placements[vehicle_id] = Placement(
                 None, None, rng.choice((a, b)).placements[vehicle_id].orientation)
     return State(problem, result_placements)
-
-
 
 
 def mutate(problem: Problem, state: State, rng: random.Random, tries: int = 30) -> State:
@@ -196,8 +176,6 @@ def mutate(problem: Problem, state: State, rng: random.Random, tries: int = 30) 
     return state #ga nemu perubahan yang valid, state dibalikin apa adanya
 
 
-
-
 def genetic_algorithm(
     problem: Problem,
     population_size: int = 50, #jumlah individu per generasi
@@ -209,6 +187,7 @@ def genetic_algorithm(
     elite_size: int = 2, #berapa individu terbaik yang langsung lolos
     tournament_k: int = 2, #ukuran turnamen
     init_attempts: int = 40, #berapa kali nyoba naro kendaraan pas bikin state awal
+    trace: list | None = None, #opsional: simpen (generasi, state terbaik) tiap membaik, buat visualizer
 ) -> GeneticResult:
     t0 = time.perf_counter() #mulai itung durasi
     rng = random.Random(seed) #generator acak sendiri, seed sama = hasil sama
@@ -216,11 +195,12 @@ def genetic_algorithm(
     terbaik = max(populasi, key=lambda s: s.value) #yang paling bagus di populasi awal
     awal = terbaik #disimpen buat initial_state
     history_best = [terbaik.value] #index 0 = populasi awal
+    if trace is not None:
+        trace.append((0, terbaik))
     history_avg = [sum(s.value for s in populasi) / len(populasi)]
     elite_size = min(elite_size, population_size) #jangan lebih dari isi populasi
 
-
-    for _ in range(generations): #1 putaran = 1 generasi = 1 iterasi
+    for gen in range(1, generations + 1): #1 putaran = 1 generasi = 1 iterasi
         urut = sorted(populasi, key=lambda s: s.value, reverse=True) #urut dari nilai tertinggi
         baru = urut[:elite_size] #elitism, yang paling bagus langsung lolos
         while len(baru) < population_size: #sisanya diisi anak
@@ -235,9 +215,10 @@ def genetic_algorithm(
         terbaik_gen = max(populasi, key=lambda s: s.value) #terbaik di generasi ini
         if terbaik_gen.value > terbaik.value: #kalo lebih bagus dari yang pernah ada
             terbaik = terbaik_gen
+            if trace is not None:
+                trace.append((gen, terbaik))
         history_best.append(terbaik.value) #nilai terbaik sepanjang pencarian, ga pernah turun
         history_avg.append(sum(s.value for s in populasi) / len(populasi))
-
 
     return GeneticResult(
         algorithm="genetic_algorithm", seed=seed, population_size=population_size,
