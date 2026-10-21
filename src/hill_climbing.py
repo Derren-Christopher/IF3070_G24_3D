@@ -54,7 +54,7 @@ class HillClimbingResult:
             "max_sideways": self.max_sideways
         }
 
-def _climb(problem: Problem, initial: State, rng: random.Random, name: str, max_sideways: int, max_iters: int, seed: int) -> HillClimbingResult:
+def _climb(problem: Problem, initial: State, rng: random.Random, name: str, max_sideways: int, max_iters: int, seed: int, trace: list | None = None) -> HillClimbingResult:
     t0 = time.perf_counter()
     state = initial
     history = [state.value]
@@ -62,6 +62,8 @@ def _climb(problem: Problem, initial: State, rng: random.Random, name: str, max_
     sideways_total = 0
     evaluated = 0
     stop_reason = "max_iterations"
+    if trace is not None: #opsional: simpen (iterasi, state) buat visualizer
+        trace.append((0, state))
 
     for _ in range(max_iters):
         cur = state.value
@@ -83,7 +85,7 @@ def _climb(problem: Problem, initial: State, rng: random.Random, name: str, max_
             sideways_streak = 0
         elif best_val is not None and best_val == cur: #nah ini sideways move
             if sideways_streak >= max_sideways:
-                stop_reason = ("local optimum" if max_sideways == 0 else "max_sideways_reached")
+                stop_reason = "local_optimum" if max_sideways == 0 else "max_sideways_reached" 
                 break
             state = state.apply(best_move)
             sideways_streak += 1
@@ -92,15 +94,16 @@ def _climb(problem: Problem, initial: State, rng: random.Random, name: str, max_
             stop_reason = "local_optimum"
             break
         history.append(state.value)
+        if trace is not None:
+            trace.append((len(history) - 1, state))
 
     return HillClimbingResult(
         algorithm = name, seed = seed, initial_state = initial, final_state = state,
         history = history, iterations = len(history)-1, sideways_moves = sideways_total, neighbors_evaluated = evaluated, duration = time.perf_counter() - t0, stop_reason = stop_reason, max_sideways = max_sideways,
     )
 
-def steepest_ascent(problem: Problem, initial: State, seed: int = 0, max_iters: int = 10000) -> HillClimbingResult:
-    return _climb(problem, initial, random.Random(seed), "steepest_ascent", max_sideways=0, max_iters=max_iters, seed=seed)
+def steepest_ascent(problem: Problem, initial: State, seed: int = 0, max_iters: int = 10000, trace: list | None = None) -> HillClimbingResult:
+    return _climb(problem, initial, random.Random(seed), "steepest_ascent", max_sideways=0, max_iters=max_iters, seed=seed, trace=trace)
 
-def sideways_move(problem: Problem, initial: State, seed: int = 0, max_sideways: int = 100, max_iters: int = 10000) -> HillClimbingResult:
-    return _climb(problem, initial, random.Random(seed), f"sideways_move (max = {max_sideways})", max_sideways=max_sideways, max_iters=max_iters, seed=seed)
-
+def sideways_move(problem: Problem, initial: State, seed: int = 0, max_sideways: int = 100, max_iters: int = 10000, trace: list | None = None) -> HillClimbingResult:
+    return _climb(problem, initial, random.Random(seed), f"sideways_move (max = {max_sideways})", max_sideways=max_sideways, max_iters=max_iters, seed=seed, trace=trace)
