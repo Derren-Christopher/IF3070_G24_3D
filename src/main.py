@@ -1,15 +1,3 @@
-"""Main gabungan: satu interface buat semua algoritma local search penempatan kendaraan di kapal kargo.
-
-    1. Hill Climbing - Steepest Ascent
-    2. Hill Climbing - Sideways Move
-    3. Simulated Annealing
-    4. Genetic Algorithm
-    5. BANDINGKAN SEMUA (banyak seed + grafik + statistik, pakai experiment.py & visualizer.py)
-
-Jalankan:  python main.py
-File yang dibutuhkan (satu folder): define.py, hill_climbing.py, simulated_annealing.py,
-genetic_algorithm.py, dan (buat grafik) visualizer.py + experiment.py + matplotlib.
-"""
 from __future__ import annotations
 
 import random
@@ -21,7 +9,7 @@ from genetic_algorithm import genetic_algorithm
 from hill_climbing import sideways_move, steepest_ascent
 from simulated_annealing import simulated_annealing
 
-try:  # visualisasi opsional: butuh matplotlib
+try:
     import experiment as exp
     import visualizer as viz
     VIZ_OK, VIZ_ERR = True, ""
@@ -30,8 +18,30 @@ except ImportError as err:
 
 ALGOS = {"1": "Steepest Ascent", "2": "Sideways Move", "3": "Simulated Annealing", "4": "Genetic Algorithm"}
 
+BANNER_WIDTH = 71
 
-# ====================================================================== input helper
+def print_banner() -> None:
+    art = [
+        " ██████╗ █████╗ ██████╗  ██████╗  ██████╗ ",
+        "██╔════╝██╔══██╗██╔══██╗██╔════╝ ██╔═══██╗",
+        "██║     ███████║██████╔╝██║  ███╗██║   ██║",
+        "██║     ██╔══██║██╔══██╗██║   ██║██║   ██║",
+        "╚██████╗██║  ██║██║  ██║╚██████╔╝╚██████╔╝",
+        " ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ",
+    ]
+    lines = (
+        [""]
+        + art
+        + [""]
+        + ["P L A C E M E N T   O P T I M I Z E R", ""]
+        + ["By 3D", "Tugas Besar IF3070 - 2026", ""]
+    )
+    print("\n")
+    print("╔" + "═" * BANNER_WIDTH + "╗")
+    for line in lines:
+        print("║" + line.center(BANNER_WIDTH) + "║")
+    print("╚" + "═" * BANNER_WIDTH + "╝")
+    print("\n")
 
 def ask_int(prompt: str, minimum: int = 0) -> int:
     while True:
@@ -42,7 +52,6 @@ def ask_int(prompt: str, minimum: int = 0) -> int:
             print(f"Nilai harus >= {minimum}.")
         except ValueError:
             print("Input harus angka bulat.")
-
 
 def ask_int_default(prompt: str, default: int, minimum: int = 0) -> int:
     while True:
@@ -57,7 +66,6 @@ def ask_int_default(prompt: str, default: int, minimum: int = 0) -> int:
         except ValueError:
             print("Input harus angka bulat.")
 
-
 def ask_float(prompt: str, default: float) -> float:
     while True:
         raw = input(f"{prompt} [default {default}]: ").strip()
@@ -68,7 +76,6 @@ def ask_float(prompt: str, default: float) -> float:
         except ValueError:
             print("Input harus angka.")
 
-
 def ask_rate(prompt: str, default: float) -> float:
     while True:
         value = ask_float(prompt, default)
@@ -76,14 +83,12 @@ def ask_rate(prompt: str, default: float) -> float:
             return value
         print("Nilai harus di antara 0 dan 1.")
 
-
 def ask_choice(prompt: str, options: list[str]) -> str:
     while True:
         value = input(prompt).strip().upper()
         if value in [opt.upper() for opt in options]:
             return value
         print(f"Pilih salah satu: {', '.join(options)}")
-
 
 def ask_yes_no(prompt: str) -> bool:
     while True:
@@ -93,9 +98,6 @@ def ask_yes_no(prompt: str) -> bool:
         if value in {"n", "no"}:
             return False
         print("Jawab y/yes atau n/no.")
-
-
-# ====================================================================== bikin problem & state awal
 
 def build_manual_vehicles(n_vehicles: int) -> list[Vehicle]:
     vehicles: list[Vehicle] = []
@@ -110,9 +112,7 @@ def build_manual_vehicles(n_vehicles: int) -> list[Vehicle]:
         vehicles.append(Vehicle(f"V{i:02d}", w, l, fee, weight, eta))
     return vehicles
 
-
 def user_placement(problem: Problem) -> State:
-    """State awal manual. Diulang kalau hasilnya ga valid (numpuk/keluar geladak/overcapacity)."""
     while True:
         placements: dict[str, Placement] = {}
         print("\nMasukkan placement awal tiap kendaraan.")
@@ -129,8 +129,6 @@ def user_placement(problem: Problem) -> State:
         state = State(problem, placements)
         if is_feasible(state):
             return state
-        print("\n[!] State awal ga valid (numpuk / keluar geladak / overcapacity). Masukkan ulang.")
-
 
 def setup_problem(min_vehicles: int) -> tuple[Problem, int]:
     n_vehicles = ask_int(f"Jumlah kendaraan (min {min_vehicles}): ", min_vehicles)
@@ -154,7 +152,6 @@ def setup_problem(min_vehicles: int) -> tuple[Problem, int]:
     print_vehicle_list(problem)
     return problem, seed
 
-
 def initial_state_for(problem: Problem, seed: int) -> State:
     print("\nState awal:  R. RANDOM (dari seed)   M. MANUAL (input posisi tiap kendaraan)")
     if ask_choice("Pilih [R/M]: ", ["R", "M"]) == "M":
@@ -162,14 +159,10 @@ def initial_state_for(problem: Problem, seed: int) -> State:
     print("State awal dibuat secara random.")
     return problem.random_state(random.Random(seed), attempts=40)
 
-
-# ====================================================================== cetak
-
 def print_vehicle_list(problem: Problem) -> None:
     print("\n=== Daftar kendaraan yang dibuat ===")
     for v in problem.vehicles.values():
         print(f"- {v.id}: ukuran={v.w}x{v.l}, fee={v.fee}, weight={v.weight}, eta={v.eta}")
-
 
 def print_vehicle_positions(state: State, title: str) -> None:
     print(f"\n=== {title} ===")
@@ -179,7 +172,6 @@ def print_vehicle_positions(state: State, title: str) -> None:
             print(f"- {vid}: DI DALAM  (x={p.x}, y={p.y}, orientation={p.orientation})")
         else:
             print(f"- {vid}: DI LUAR kapal")
-
 
 def print_ship_matrix(state: State, title: str) -> None:
     ship = state.problem.ship
@@ -199,9 +191,7 @@ def print_ship_matrix(state: State, title: str) -> None:
     for i, row in enumerate(matrix):
         print(f"{i:>2}: " + " ".join(f"{c:>3}" for c in row))
 
-
 def is_feasible(state: State) -> bool:
-    """Cek ulang dari nol (bukan delta): ga numpuk, ga keluar geladak, ga overcapacity."""
     problem, ship = state.problem, state.problem.ship
     used: set[tuple[int, int]] = set()
     total_weight = 0
@@ -219,14 +209,11 @@ def is_feasible(state: State) -> bool:
         total_weight += v.weight
     return total_weight <= ship.max_capacity
 
-
 def sample_list(data: list, n: int = 20) -> list:
-    """Ambil n titik merata dari list panjang biar output debug ga kebanyakan."""
     if len(data) <= n:
         return data
     step = len(data) / n
     return [data[int(i * step)] for i in range(n)] + [data[-1]]
-
 
 def best_curve(result) -> list:
     for attr in ("best_history", "history", "history_best"):
@@ -235,9 +222,7 @@ def best_curve(result) -> list:
             return list(h)
     return []
 
-
 def verify_result(result) -> list[tuple[str, bool]]:
-    """Invarian yang harus selalu benar, dihitung independen dari kode algoritma."""
     final = result.final_state
     problem = final.problem
     inside = final.inside_ids()
@@ -250,7 +235,6 @@ def verify_result(result) -> list[tuple[str, bool]]:
         ("Value akhir == ujung kurva terbaik", bool(curve) and curve[-1] == result.final_value),
         ("Value akhir >= value awal", result.final_value >= result.initial_value),
     ]
-
 
 def print_result(result, show_matrix: bool, show_history: bool) -> None:
     final = result.final_state
@@ -265,7 +249,7 @@ def print_result(result, show_matrix: bool, show_history: bool) -> None:
     print(f"Seed                  : {result.seed}")
     print(f"Value awal -> akhir   : {result.initial_value} -> {result.final_value}")
 
-    if hasattr(result, "exp_log"):  # Simulated Annealing
+    if hasattr(result, "exp_log"):
         print(f"Value state terakhir  : {result.last_state.value}")
         print(f"Iterasi               : {result.iterations}")
         print(f"Neighbors evaluated   : {result.neighbors_evaluated}")
@@ -277,12 +261,12 @@ def print_result(result, show_matrix: bool, show_history: bool) -> None:
         print(f"Stuck di iterasi      : {result.stuck_iters[:10]}{' ...' if len(result.stuck_iters) > 10 else ''}")
         print(f"Final = local optimum : {result.final_is_local_optimum}")
         print(f"Stop reason           : {result.stop_reason}")
-    elif hasattr(result, "sideways_moves"):  # Hill Climbing
+    elif hasattr(result, "sideways_moves"):
         print(f"Iterasi               : {result.iterations}")
         print(f"Sideways moves        : {result.sideways_moves}")
         print(f"Neighbors evaluated   : {result.neighbors_evaluated}")
         print(f"Stop reason           : {result.stop_reason}")
-    else:  # Genetic Algorithm
+    else:
         print(f"Ukuran populasi       : {result.population_size}")
         print(f"Generasi              : {result.generations}")
         print(f"Rata-rata populasi    : {result.history_avg[0]:.3f} -> {result.history_avg[-1]:.3f}")
@@ -311,16 +295,12 @@ def print_result(result, show_matrix: bool, show_history: bool) -> None:
             print(f"\nHistory best (disampel) : {sample_list(result.history_best)}")
             print(f"History avg (disampel)  : {[round(a, 2) for a in sample_list(result.history_avg)]}")
 
-
-# ====================================================================== parameter per algoritma
-
 def ask_hc_params(algo: str) -> dict:
     print("\nParameter Hill Climbing (Enter untuk default):")
     params = {"max_iters": ask_int_default("Max iterasi", 10000, 1)}
     if algo == "2":
         params["max_sideways"] = ask_int_default("Max sideways", 100, 0)
     return params
-
 
 def ask_sa_params() -> dict:
     print("\nParameter Simulated Annealing (Enter untuk default):")
@@ -337,7 +317,6 @@ def ask_sa_params() -> dict:
     stuck_window = ask_int_default("Stuck window (iterasi tanpa perubahan)", 50, 1)
     return dict(init_temp=init_temp, cooling_rate=cooling_rate, stopping_temp=stopping_temp, stuck_window=stuck_window)
 
-
 def ask_ga_params() -> dict:
     print("\nParameter Genetic Algorithm (Enter untuk default):")
     population_size = ask_int_default("Ukuran populasi", 50, 2)
@@ -351,9 +330,6 @@ def ask_ga_params() -> dict:
         tournament_k=ask_int_default("Ukuran turnamen", 2, 1),
         init_attempts=ask_int_default("Percobaan menaruh kendaraan saat bikin state awal", 40, 1),
     )
-
-
-# ====================================================================== jalanin satu algoritma
 
 def run_single(algo: str, show_matrix: bool, show_history: bool) -> None:
     problem, seed = setup_problem(2 if algo == "4" else 1)
@@ -386,7 +362,6 @@ def run_single(algo: str, show_matrix: bool, show_history: bool) -> None:
     if want_viz:
         save_visuals(result, trace, want_gif)
 
-
 def save_visuals(result, trace: list, want_gif: bool) -> None:
     out = Path("hasil_run")
     out.mkdir(exist_ok=True)
@@ -401,9 +376,6 @@ def save_visuals(result, trace: list, want_gif: bool) -> None:
         if want_gif:
             viz.animate_trace(trace, out / f"anim_{tag}.gif", title)
     print(f"\nVisualisasi disimpan di folder: {out.resolve()}")
-
-
-# ====================================================================== bandingkan semua
 
 def compare_all() -> None:
     if not VIZ_OK:
@@ -453,13 +425,13 @@ def compare_all() -> None:
             f.write(f"{i}. `{fn}` - {cap}\n")
     print(f"\nSelesai. Hasil (CSV, tabel, statistik, grafik) disimpan di: {out.resolve()}")
 
-
-# ====================================================================== main
-
 def main() -> None:
-    print("=== Program Main Local Search: Penempatan Kendaraan di Kapal Kargo ===")
+    print_banner()
+    print("Halo, selamat datang di Cargo Placement Optimizer by 3D, yuk pilih dulu mode outputnya")
     while True:
-        print("\nPilih mode output:")
+        print("\n" + "=" * 70)
+        print("Pilih Mode Output")
+        print("=" * 70 + "\n")
         print("1. DEBUG   -> semua detail + matriks awal & akhir + history")
         print("2. SUMMARY -> ringkasan + matriks awal & akhir")
         print("3. QUICK   -> ringkasan saja")
@@ -467,7 +439,9 @@ def main() -> None:
         show_matrix = mode_choice in {"1", "2"}
         show_history = mode_choice == "1"
 
-        print("\nPilih algoritma:")
+        print("\n" + "=" * 70)
+        print("Pilih Algoritma yang ingin digunakan")
+        print("=" * 70 + "\n")
         for k, name in ALGOS.items():
             print(f"{k}. {name}")
         print("5. BANDINGKAN SEMUA (banyak seed + grafik + statistik)")
@@ -481,7 +455,6 @@ def main() -> None:
         if not ask_yes_no("\nJalankan lagi? (y/n): "):
             print("Selesai.")
             break
-
 
 if __name__ == "__main__":
     main()
