@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="doc/img/header.jpg" alt="Cargo Placement Optimizer" width="100%">
+
 # 🚢 Cargo Placement Optimizer
 
 **Optimasi penempatan kendaraan di geladak kapal kargo dengan _local search_**
@@ -13,9 +15,6 @@ Tugas Besar **IF3070 – Dasar Inteligensi Artifisial** · 2026
 
 </div>
 
-<!-- TODO: taruh screenshot/GIF di doc/img/ lalu aktifkan baris di bawah
-![Demo](doc/img/demo.gif)
--->
 
 ---
 
