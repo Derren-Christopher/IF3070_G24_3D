@@ -27,7 +27,7 @@ ALGO_DESC = {
 }
 
 
-# ============================ BANNER ============================
+# BANNER 
 def print_banner() -> None:
     art = [
         " ██████╗ █████╗ ██████╗  ██████╗  ██████╗ ",
@@ -181,7 +181,7 @@ def initial_state_for(problem: Problem, seed: int) -> State:
     return problem.random_state(random.Random(seed), attempts=40)
 
 
-# ============================ OUTPUT ============================
+#OUTPUT
 def print_vehicle_list(problem: Problem) -> None:
     ui.section("Daftar kendaraan")
     rows = [[ui.vtag(v.id), f"{v.w}x{v.l}", v.fee, v.weight, v.eta] for v in problem.vehicles.values()]
@@ -351,7 +351,7 @@ def print_history(result) -> None:
         print(f"\n  {ui.dim('Best (disampel):')} {sample_list(result.history_best)}")
 
 
-# ============================ PARAMETER ============================
+# PARAMETER 
 def ask_hc_params(algo: str) -> dict:
     ui.section("Parameter Hill Climbing  " + ui.dim("(Enter = default)"))
     params = {"max_iters": ask_int_default("Max iterasi", 10000, 1)}
@@ -391,7 +391,7 @@ def ask_ga_params() -> dict:
     )
 
 
-# ============================ RUN ============================
+# RUN
 def run_single(algo: str, show_matrix: bool, show_history: bool) -> None:
     problem, seed = setup_problem(2 if algo == "4" else 1)
     if algo == "4":
@@ -437,6 +437,7 @@ def save_visuals(result, trace: list, want_gif: bool) -> None:
     viz.plot_run(result, out / f"run_{tag}.png", title)
     if hasattr(result, "exp_log"):
         viz.plot_sa_stats({result.algorithm: [result]}, out / f"sa_{tag}.png")
+        viz.plot_sa_prob_iter(result, out / f"sa_prob_iter_{tag}.png")
     if trace:
         viz.plot_snapshots(trace, out / f"snapshots_{tag}.png", title)
         if want_gif:
@@ -495,7 +496,7 @@ def compare_all() -> None:
     ui.success(f"Selesai. Hasil (CSV, tabel, statistik, grafik) disimpan di: {ui.bold(out.resolve())}")
 
 
-# ============================ MAIN ============================
+# MAIN
 def goodbye() -> None:
     print()
     ui.box("Sampai jumpa", [

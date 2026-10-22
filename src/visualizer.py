@@ -584,3 +584,16 @@ def plot_sa_stats(runs, path) -> None:
     fig.suptitle("Analisis khusus Simulated Annealing", fontsize=13, fontweight="bold")
     fig.tight_layout()
     _save(fig, path, "Analisis Simulated Annealing: suhu vs value, peluang terima move buruk, rasio penerimaan, dan stuck.")
+
+
+def plot_sa_prob_iter(result, path) -> None:
+    """Plot e^(delta/T) terhadap banyak iterasi (sesuai guideline), hanya untuk move yang lebih buruk."""
+    its = [it for it, _, _ in result.exp_log]
+    ps = [p for _, _, p in result.exp_log]
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.scatter(its, ps, s=3, alpha=0.4, color=ALGO_COLORS[3])
+    ax.set_xlabel("Iterasi")
+    ax.set_ylabel("e^(\u0394E/T)")
+    ax.set_title(f"Peluang menerima move lebih buruk vs iterasi (seed {result.seed})")
+    fig.tight_layout()
+    _save(fig, path, "Plot e^(delta E / T) terhadap banyak iterasi pada Simulated Annealing.")
