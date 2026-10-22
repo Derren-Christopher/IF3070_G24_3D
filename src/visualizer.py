@@ -587,7 +587,6 @@ def plot_sa_stats(runs, path) -> None:
 
 
 def plot_sa_prob_iter(result, path) -> None:
-    """Plot e^(delta/T) terhadap banyak iterasi (sesuai guideline), hanya untuk move yang lebih buruk."""
     its = [it for it, _, _ in result.exp_log]
     ps = [p for _, _, p in result.exp_log]
     fig, ax = plt.subplots(figsize=(8, 4))
