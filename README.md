@@ -377,7 +377,7 @@ Dua kasus pertama berguna untuk laporan sebagai contoh nyata **local optimum** p
 
 | Nama | NIM | Kontribusi |
 |---|---|---|
-| M.B. Adyanti Narandita | 18224040 | Simulated Annealing, pengerjaan laporan, visualisasi |
+| M.B. Adyanti Narandita | 18224026 | Simulated Annealing, pengerjaan laporan, visualisasi |
 | Derren Christopher Boenardi | 18224040 | Define environment, Hill Climbing, integrasi kode |
 | Rafeyfa Dea Putri Ramadhani | 18224044 | Genetic Algorithm, pengerjaan laporan, run experiment |
 
